@@ -66,7 +66,7 @@
       "ap-northeast-1"   : {"CentOsAmi" : "ami-eec1c380"},
       "ap-northeast-2"   : {"CentOsAmi" : "ami-c74789a9"},
       "ap-southeast-1"   : {"CentOsAmi" : "ami-f068a193"},
-      "ap-southeast-2"   : {"CentOsAmi" : "ami-fedafc9d"},
+      "ap-southeast-2"   : {"CentOsAmi" : "ami-d8c21dba"},
       "sa-east-1"        : {"CentOsAmi" : "ami-26b93b4a"}
     }
   },
