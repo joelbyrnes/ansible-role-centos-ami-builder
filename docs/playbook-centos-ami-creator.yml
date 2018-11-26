@@ -9,8 +9,15 @@
       centos_ami_builder_aws_secret_key: "{{ lookup('env','AWS_SECRET_ACCESS_KEY') }}"
       centos_ami_builder_aws_security_token: "{{ lookup('env','AWS_SECURITY_TOKEN') }}"
       centos_ami_builder_ec2_keypair: "francois@home"
+      centos_ami_builder_ec2_image: "ami-d8c21dba"
+      centos_ami_builder_ec2_vpc_subnet_id: "subnet-abcd1234"
       centos_ami_builder_username: 'centos'
       centos_ami_builder_vgname: "vgmain"
       centos_ami_builder_disksize: '8'
       centos_ami_builder_bootsize: '256M'
       centos_ami_builder_rootsize: '4096M'
+      centos_ami_builder_environment:
+        http_proxy: 'http://myproxy:8080/'
+        https_proxy: 'http://myproxy:8080/'
+        no_proxy: '169.254.169.254,mynetwork.com'
+        ANSIBLE_HOST_KEY_CHECKING: "False"

@@ -3,6 +3,7 @@
   ec2:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
     instance_id: "{{ centos_ami_builder_ec2_instance_id }}"
     state: stopped
@@ -12,6 +13,7 @@
   ec2_vol:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
     id: "{{ item }}"
     instance: ""
@@ -23,6 +25,7 @@
   ec2_vol:
       aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
       aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+      security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
       region: "{{ centos_ami_builder_aws_region }}"
       id: "{{ centos_ami_builder_ebs_secondary_id }}"
       state: "present"
@@ -48,6 +51,7 @@
   ec2_ami:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
     instance_id: "{{ centos_ami_builder_ec2_instance_id }}"
     name: "{{ centos_ami_builder_ami_fullname }}"
@@ -58,40 +62,22 @@
         size: "{{ centos_ami_builder_disksize }}"
         volume_type: "{{ centos_ami_builder_disktype }}"
         delete_on_termination: true
-  register: myami
+  register: centos_ami_builder_output_ami
 
-- name: Detach root volumes from the temporary instance
+- name: Destroy original root volume of the temporary instance
   ec2_vol:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
-    id: "{{ centos_ami_builder_ebs_secondary_id }}"
-    instance: ""
-
-- name: Reattach original volume to allow proper destruction of the stack
-  ec2_vol:
-      aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
-      aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
-      region: "{{ centos_ami_builder_aws_region }}"
-      id: "{{ centos_ami_builder_ebs_root_id }}"
-      state: "present"
-      instance: "{{ centos_ami_builder_ec2_instance_id }}"
-      device_name: "/dev/sda1"
-      delete_on_termination: yes
-
-- name: Destroy secondary root volume of the temporary instance
-  ec2_vol:
-    aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
-    aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
-    region: "{{ centos_ami_builder_aws_region }}"
-    id: "{{ centos_ami_builder_ebs_secondary_id }}"
+    id: "{{ centos_ami_builder_ebs_root_id }}"
     state: "absent"
 
 - name: Show resulting AMI
-  debug: msg="AMI has been created with ID {{ myami.image_id }}"
+  debug: msg="AMI has been created with ID {{ centos_ami_builder_output_ami.image_id }}"
 
 - name: Save ID of the new AMI to a local file so it can be used as an artifact
   local_action: copy
   args:
-    content: "{{ myami.image_id }}"
+    content: "{{ centos_ami_builder_output_ami.image_id }}"
     dest: "{{ role_path }}/target/ami_id.txt"

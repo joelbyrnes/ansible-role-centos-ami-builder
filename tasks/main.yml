@@ -4,6 +4,7 @@
 - import_tasks: 02_install.yml
   delegate_to: ami_builder
   become: true
+  environment: "{{ centos_ami_builder_environment }}"
   tags: ['centos-ami-builder','centos-ami-builder-install']
 - import_tasks: 03_image.yml
   tags: ['centos-ami-builder','centos-ami-builder-image']

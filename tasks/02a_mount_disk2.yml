@@ -1,0 +1,45 @@
+---
+- name: Create new partition table on the second EBS Volume
+  shell: parted --script {{ centos_ami_builder_disk2dev }} mklabel msdos
+
+- name: Create boot partition on the new disk
+  shell: parted --script {{ centos_ami_builder_disk2dev }} mkpart primary ext3 1MB {{ centos_ami_builder_bootsize }}
+
+- name: Create lvm partition on the new disk
+  shell: parted --script {{ centos_ami_builder_disk2dev }} mkpart primary ext4 {{ centos_ami_builder_bootsize }} 100%
+
+- name: Set partition flags on boot
+  shell: parted --script {{ centos_ami_builder_disk2dev }} set 1 boot on
+
+- name: Set partition flags on lvm
+  shell: parted --script {{ centos_ami_builder_disk2dev }} set 2 lvm on
+
+- name: Create boot filesystem
+  shell: mkfs.ext3 -L boot {{ centos_ami_builder_disk2dev }}1
+
+- name: Create LVM Physical-Volume
+  shell: pvcreate -ff --yes {{ centos_ami_builder_disk2dev }}2
+
+- name: Create LVM Volume-Group
+  shell: vgcreate {{ centos_ami_builder_vgname }} {{ centos_ami_builder_disk2dev }}2
+
+- name: Create LVM Logical-Volume
+  shell: lvcreate --wipesignatures=y --zero=y --name=root --size={{ centos_ami_builder_rootsize }} {{ centos_ami_builder_vgname }}
+
+- name: Create root filesystem
+  shell: mkfs.ext4 -L root /dev/{{ centos_ami_builder_vgname }}/root
+
+- name: Mount new root filesystem
+  shell: mount /dev/disk/by-label/root {{ centos_ami_builder_disk2mnt }}
+  args:
+    warn: false
+
+- name: Create important top-level directories
+  shell: mkdir -p {{ centos_ami_builder_disk2mnt }}/{boot,dev,proc,sys,etc}
+  args:
+    warn: false
+
+- name: Mount boot filesystem
+  shell: mount /dev/disk/by-label/boot {{ centos_ami_builder_disk2mnt }}/boot
+  args:
+    warn: false

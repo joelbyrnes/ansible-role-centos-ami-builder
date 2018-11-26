@@ -1,23 +1,4 @@
 ---
-#- name: Create temporary VPC and EC2 instance for creating the AMI
-#  cloudformation:
-#    aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
-#    aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
-#    stack_name: "{{ centos_ami_builder_stack_name }}"
-#    state: "present"
-#    region: "{{ centos_ami_builder_aws_region }}"
-#    template: "{{ role_path }}/files/temp-vpc-with-temp-ec2.json"
-#    template_parameters:
-#      StackName: "{{ centos_ami_builder_stack_name }}"
-#      InstanceType: "{{ centos_ami_builder_ec2_type }}"
-#      AwsRegion: "{{ centos_ami_builder_aws_region }}"
-#      DiskDevice: "{{ centos_ami_builder_disk2dev }}"
-#      DiskSizeGb: "{{ centos_ami_builder_disksize }}"
-#      KeyName: "{{ centos_ami_builder_ec2_keypair }}"
-#      SSHLocation: "{{ centos_ami_builder_allowip }}"
-#      CidrBase: "{{ centos_ami_builder_stack_cidrbase }}"
-#  register: stack_data
-
 # TODO use ec2_instance which is newer and maybe better
 
 - name: Create temporary EC2 instance for creating the AMI
@@ -45,7 +26,8 @@
       volume_type: "{{ centos_ami_builder_disktype }}"
       volume_size: "{{ centos_ami_builder_disksize }}"
       delete_on_termination: true
-      # TODO encrypt
+      tags:
+        Application: "centos-ami-builder-image"
 
   register: ec2
 

@@ -1,8 +1,20 @@
 ---
+# TODO delete ec2 and volumes
 - name: Destroy temporary stack
   cloudformation:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
-    stack_name: "{{ centos_ami_builder_stack_name }}"
+    stack_name: 'stack-ami-builder'
     state: "absent"
+
+#- name: Destroy temporary instance and volumes
+#  ec2:
+#    aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
+#    aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+#    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
+#    region: "{{ centos_ami_builder_aws_region }}"
+#    instance_id: "{{ centos_ami_builder_ec2_instance_id }}"
+#    state: terminated
+#    wait: False

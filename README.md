@@ -49,3 +49,5 @@ EBS snapshot remain.
      authorize the use of these AMI in your AWS account
    * Use this role from an ansible playbook and make sure you pass all the
      important parameters which are defined in the defaults/main.yml file
+   * Registers AMI output to centos_ami_builder_output_ami, which contains image_id
+   * Also saves image_id to `{{ role_path }}/target/ami_id.txt` 
