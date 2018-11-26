@@ -14,6 +14,10 @@ centos_ami_builder_bootsize: '256M'
 centos_ami_builder_username: 'centos'
 centos_ami_builder_environment: ""
 
+# If you don't have AMI create permissions or want to test first, you can set these to false to keep the instance
+centos_ami_builder_create_ami: true
+centos_ami_builder_terminate_instance: true
+
 # EC2 instance type of the temporary instance used to build the new AMI
 centos_ami_builder_ec2_type: "t2.nano"
 

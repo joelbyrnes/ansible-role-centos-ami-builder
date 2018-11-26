@@ -63,6 +63,7 @@
         volume_type: "{{ centos_ami_builder_disktype }}"
         delete_on_termination: true
   register: centos_ami_builder_output_ami
+  when: centos_ami_builder_create_ami
 
 - name: Destroy original root volume of the temporary instance
   ec2_vol:
@@ -75,9 +76,11 @@
 
 - name: Show resulting AMI
   debug: msg="AMI has been created with ID {{ centos_ami_builder_output_ami.image_id }}"
+  when: centos_ami_builder_create_ami
 
 - name: Save ID of the new AMI to a local file so it can be used as an artifact
   local_action: copy
   args:
     content: "{{ centos_ami_builder_output_ami.image_id }}"
     dest: "{{ role_path }}/target/ami_id.txt"
+  when: centos_ami_builder_create_ami
