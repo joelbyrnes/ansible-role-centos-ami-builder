@@ -1,35 +1,86 @@
 ---
-- name: Create temporary VPC and EC2 instance for creating the AMI
-  cloudformation:
+#- name: Create temporary VPC and EC2 instance for creating the AMI
+#  cloudformation:
+#    aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
+#    aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+#    stack_name: "{{ centos_ami_builder_stack_name }}"
+#    state: "present"
+#    region: "{{ centos_ami_builder_aws_region }}"
+#    template: "{{ role_path }}/files/temp-vpc-with-temp-ec2.json"
+#    template_parameters:
+#      StackName: "{{ centos_ami_builder_stack_name }}"
+#      InstanceType: "{{ centos_ami_builder_ec2_type }}"
+#      AwsRegion: "{{ centos_ami_builder_aws_region }}"
+#      DiskDevice: "{{ centos_ami_builder_disk2dev }}"
+#      DiskSizeGb: "{{ centos_ami_builder_disksize }}"
+#      KeyName: "{{ centos_ami_builder_ec2_keypair }}"
+#      SSHLocation: "{{ centos_ami_builder_allowip }}"
+#      CidrBase: "{{ centos_ami_builder_stack_cidrbase }}"
+#  register: stack_data
+
+# TODO use ec2_instance which is newer and maybe better
+
+- name: Create temporary EC2 instance for creating the AMI
+  ec2:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
-    stack_name: "{{ centos_ami_builder_stack_name }}"
-    state: "present"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
-    template: "{{ role_path }}/files/temp-vpc-with-temp-ec2.json"
-    template_parameters:
-      StackName: "{{ centos_ami_builder_stack_name }}"
-      InstanceType: "{{ centos_ami_builder_ec2_type }}"
-      AwsRegion: "{{ centos_ami_builder_aws_region }}"
-      DiskDevice: "{{ centos_ami_builder_disk2dev }}"
-      DiskSizeGb: "{{ centos_ami_builder_disksize }}"
-      KeyName: "{{ centos_ami_builder_ec2_keypair }}"
-      SSHLocation: "{{ centos_ami_builder_allowip }}"
-      CidrBase: "{{ centos_ami_builder_stack_cidrbase }}"
-  register: stack_data
+    key_name: "{{ centos_ami_builder_ec2_keypair }}"
+    instance_type: "{{ centos_ami_builder_ec2_type }}"
+    image: "{{ centos_ami_builder_ec2_image }}"
+    wait: true
+    vpc_subnet_id: "{{ centos_ami_builder_ec2_vpc_subnet_id }}"
+    assign_public_ip: no
+
+    instance_tags:
+      Name: "centos-ami-builder"
+    exact_count: 1
+    count_tag:
+      Name: "centos-ami-builder"
+      # TODO version, base ami, etc
+
+    volumes:
+    - device_name: "{{ centos_ami_builder_disk2dev }}"
+      volume_type: "{{ centos_ami_builder_disktype }}"
+      volume_size: "{{ centos_ami_builder_disksize }}"
+      delete_on_termination: true
+      # TODO encrypt
+
+  register: ec2
+
+- name: Show ec2
+  debug: var=ec2
+
+- name: Set ec2_instance fact when new
+  set_fact: ec2_instance="{{ item }}"
+  with_items: "{{ ec2.instances }}"
+  when: not ec2.tagged_instances is defined
+
+- name: Set ec2_instance fact when existing
+  set_fact: ec2_instance="{{ item }}"
+  with_items: "{{ ec2.tagged_instances }}"
+  when: ec2.tagged_instances is defined
+
+- name: Show ec2_instance
+  debug: var=ec2_instance
 
 - name: Wait for the temporary EC2 instance to be ready
   wait_for:
     delay: 3
-    host: "{{ stack_data.stack_outputs.Ec2PublicIpAddr }}"
+    host: "{{ ec2_instance.private_ip }}"
     port: 22
     search_regex: OpenSSH
     timeout: 180
+#  delegate_to: "{{ ec2_instance.private_ip }}"
+#  wait_for_connection:
+#    delay: 60
+#    timeout: 320
 
 - name: Add temporary EC2 instance to inventory
   add_host:
     ansible_connection: ssh
-    ansible_ssh_host: "{{ stack_data.stack_outputs.Ec2PublicIpAddr }}"
+    ansible_ssh_host: "{{ ec2_instance.private_ip }}"
     ansible_ssh_user: centos
     hostname: ami_builder
     name: ami_builder
@@ -38,9 +89,10 @@
   ec2_vol_facts:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
     filters:
-      attachment.instance-id: "{{ stack_data.stack_outputs.Ec2InstanceId }}"
+      attachment.instance-id: "{{ ec2_instance.id }}"
       attachment.status: "attached"
       attachment.device: "/dev/sda1"
   register: fact_ebs_root
@@ -49,9 +101,10 @@
   ec2_vol_facts:
     aws_access_key: "{{ centos_ami_builder_aws_access_key | default('') }}"
     aws_secret_key: "{{ centos_ami_builder_aws_secret_key | default('') }}"
+    security_token: "{{ centos_ami_builder_aws_security_token | default('') }}"
     region: "{{ centos_ami_builder_aws_region }}"
     filters:
-      attachment.instance-id: "{{ stack_data.stack_outputs.Ec2InstanceId }}"
+      attachment.instance-id: "{{ ec2_instance.id }}"
       attachment.status: "attached"
       attachment.device: "/dev/xvdf"
   register: fact_ebs_secondary
@@ -59,18 +112,18 @@
 - set_fact:
     centos_ami_builder_ebs_root_id: '{{ fact_ebs_root.volumes.0.id }}'
     centos_ami_builder_ebs_secondary_id: '{{ fact_ebs_secondary.volumes.0.id }}'
-    centos_ami_builder_ec2_public_addr: '{{ stack_data.stack_outputs.Ec2PublicIpAddr }}'
-    centos_ami_builder_ec2_instance_id: '{{ stack_data.stack_outputs.Ec2InstanceId }}'
-    centos_ami_builder_vpc_id: '{{ stack_data.stack_outputs.VpcId }}'
+    centos_ami_builder_ec2_public_addr: '{{ ec2_instance.public_ip }}'
+    centos_ami_builder_ec2_private_addr: '{{ ec2_instance.private_ip }}'
+    centos_ami_builder_ec2_instance_id: '{{ ec2_instance.id}}'
 
-- name: Show EIP of EC2 instance created by cloudformation
-  debug: msg="The EIP of the temporary instance is {{ centos_ami_builder_ec2_public_addr }}"
+- name: Show public IP of EC2 instance
+  debug: msg="The public IP of the temporary instance is {{ centos_ami_builder_ec2_public_addr }}"
 
-- name: Show ID of EC2 instance created by cloudformation
+- name: Show private IP of EC2 instance
+  debug: msg="The private IP of the temporary instance is {{ centos_ami_builder_ec2_private_addr }}"
+
+- name: Show ID of EC2 instance
   debug: msg="The ID of the temporary instance is {{ centos_ami_builder_ec2_instance_id }}"
-
-- name: Show ID of VPC created by cloudformation
-  debug: msg="The ID of the temporary VPC is {{ centos_ami_builder_vpc_id }}"
 
 - name: Show information about root ebs volume
   debug: msg="The ID of the root EBS volume is {{ centos_ami_builder_ebs_root_id }}"

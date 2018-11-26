@@ -5,8 +5,9 @@
   roles:
     - role: centos-ami-builder
       centos_ami_builder_aws_region: "eu-west-1"
-      centos_ami_builder_aws_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
-      centos_ami_builder_aws_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+      centos_ami_builder_aws_access_key: "{{ lookup('env','AWS_ACCESS_KEY_ID') }}"
+      centos_ami_builder_aws_secret_key: "{{ lookup('env','AWS_SECRET_ACCESS_KEY') }}"
+      centos_ami_builder_aws_security_token: "{{ lookup('env','AWS_SECURITY_TOKEN') }}"
       centos_ami_builder_ec2_keypair: "francois@home"
       centos_ami_builder_username: 'centos'
       centos_ami_builder_vgname: "vgmain"
