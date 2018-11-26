@@ -34,12 +34,12 @@ This Ansible role comes with the following requirements:
      https://wiki.centos.org/Cloud/AWS
 
 ## How it works
-This Ansible role works by first creating a temporary stack in your AWS Account
-which contains a VPC and an EC2 instance. This instance is running the official
+This Ansible role works by first creating a temporary EC2 instance in your AWS Account. 
+This instance is running the official
 CentOS image and the new CentOS operating system will be installed on a
 secondary empty EBS volume. At the end of the installation the instance is
 stopped and the new AMI is created as an image of the secondary volume. The
-stack and all its resources are destroyed and only the new AMI and its related
+instance and all its resources are destroyed and only the new AMI and its related
 EBS snapshot remain.
 
 ## How to use it

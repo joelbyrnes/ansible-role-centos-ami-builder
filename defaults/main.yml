@@ -24,14 +24,9 @@ centos_ami_builder_ami_tags:
   os_name: 'centos'
   os_majver: '7'
 
-# Range of addresses which are authorised to connect to the temporary instance (eg: "${your_home_ip}/32")
-centos_ami_builder_allowip: '0.0.0.0/0'
-
 # Users should not have to override the following parameters
 centos_ami_builder_disk2dev: '/dev/xvdf'
 centos_ami_builder_disk2mnt: '/mnt/root'
-centos_ami_builder_stack_name: 'stack-ami-builder'
-centos_ami_builder_stack_cidrbase: '10.89'
 
 # Needs to be updated when new CentOS versions are released
 centos_ami_builder_c7gpgkey: "http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7"

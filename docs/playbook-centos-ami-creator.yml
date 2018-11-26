@@ -14,4 +14,3 @@
       centos_ami_builder_disksize: '8'
       centos_ami_builder_bootsize: '256M'
       centos_ami_builder_rootsize: '4096M'
-      centos_ami_builder_allowip: '0.0.0.0/0'
